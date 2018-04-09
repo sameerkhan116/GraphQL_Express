@@ -15,6 +15,7 @@
     "colors": "^1.2.1",
     "express": "^4.16.3",
     "graphql-tools": "^2.23.1",
+    "morgan": "^1.9.0",
     "pg": "^7.4.1",
     "pg-hstore": "^2.3.2",
     "sequelize": "^4.37.6"

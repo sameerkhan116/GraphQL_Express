@@ -24,7 +24,6 @@ Object
       db[modelName].associate(db);
     }
   });
-
 // make the sequelize function available on db.sequelize which we need to sync
 // the app when starting the server
 db.sequelize = sequelize;

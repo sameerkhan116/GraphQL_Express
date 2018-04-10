@@ -11,6 +11,56 @@
 */
 
 export default {
+  User : {
+    boards: ({
+      id
+    }, args, {
+      models
+    }, info) => models
+      .Board
+      .findAll({
+        where: {
+          owner: id
+        }
+      }),
+    suggestions: ({
+      id
+    }, args, {
+      models
+    }, info) => models
+      .Suggestion
+      .findAll({
+        where: {
+          creatorId: id
+        }
+      })
+  },
+  Board : {
+    suggestions: ({
+      id
+    }, args, {
+      models
+    }, info) => models
+      .Suggestion
+      .findAll({
+        where: {
+          boardId: id
+        }
+      })
+  },
+  Suggestion : {
+    creator: ({
+      creatorId
+    }, args, {
+      models
+    }, info) => models
+      .User
+      .findOne({
+        where: {
+          id: creatorId
+        }
+      })
+  },
   Query : {
     allUsers: (obj, args, {
       models
@@ -25,6 +75,24 @@ export default {
       .User
       .findOne({where: {
           username
+        }}),
+    userBoards: (obj, {
+      owner
+    }, {
+      models
+    }, info) => models
+      .Board
+      .findAll({where: {
+          owner
+        }}),
+    userSuggestions: (obj, {
+      creatorId
+    }, {
+      models
+    }, info) => models
+      .Suggestion
+      .findAll({where: {
+          creatorId
         }})
   },
 
@@ -50,6 +118,16 @@ export default {
       models
     }, info) => models
       .User
-      .destroy({where: args})
+      .destroy({where: args}),
+    createBoard: (obj, args, {
+      models
+    }, info) => models
+      .Board
+      .create(args),
+    createSuggestion: (obj, args, {
+      models
+    }, info) => models
+      .Suggestion
+      .create(args)
   }
 }

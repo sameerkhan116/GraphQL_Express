@@ -17,6 +17,10 @@ import {graphqlExpress, graphiqlExpress} from 'apollo-server-express';
 import {makeExecutableSchema} from 'graphql-tools';
 import logger from 'morgan';
 import colors from 'colors';
+import jwt from 'jsonwebtoken';
+import {createServer} from 'http';
+import {execute, subscribe} from 'graphql';
+import {SubscriptionServer} from 'subscriptions-transport-ws';
 
 /*
   Typedefs defined in the schema which is required for makeexecutable schema
@@ -29,18 +33,39 @@ import resolvers from './resolvers';
 import models from './models'; // the sequelize models that we have defined
 
 const app = express();
+const PORT = 4000;
 const schema = makeExecutableSchema({typeDefs, resolvers}); // pass the required typeDefs and resolvers to make executable schema
+const SECRET = 'sameerkhan';
 
+const addUser = async(req) => {
+  const token = req.headers.authorization;
+  try {
+    const {user} = await jwt.verify(token, SECRET);
+    req.user = user;
+  } catch (err) {
+    console.log(err);
+  }
+  req.next();
+}
+
+app.use(addUser);
 // to log HTTP requests
 app.use(logger('dev'));
 // create the /graphql endpoint with bodyparser middleware and also
 // graphQlExpress which requires the schema we created earlier and the models
 // are passed as context
-app.use('/graphql', bodyParser.json(), graphqlExpress({schema, context: {
-    models
-  }}));
+app.use('/graphql', bodyParser.json(), graphqlExpress(req => ({
+  schema,
+  context: {
+    models,
+    SECRET,
+    user: req.user
+  }
+})));
 // set up the graphiql endpoint for running graphiql
 app.get('/graphiql', graphiqlExpress({endpointURL: '/graphql'})); // if you want GraphiQL enabled
+
+const server = createServer(app);
 
 /*
   Sync the db models with sequelize (force: true) means drop db if it exists
@@ -48,9 +73,13 @@ app.get('/graphiql', graphiqlExpress({endpointURL: '/graphql'})); // if you want
 */
 models
   .sequelize
-  .sync({force: true})
-  .then(() => app.listen(4000, err => {
-    if (err) 
-      console.log(err);
-    console.log('Running on http://localhost:4000'.yellow.underline)
-  }));
+  .sync({})
+  .then(() => server.listen(PORT, () => {
+    new SubscriptionServer({
+      execute,
+      subscribe,
+      schema
+    }, {server, path: '/subscriptions'})
+  }, (err) => err
+    ? console.log(err)
+    : console.log(`Running on http://localhost:${PORT}`.yellow.underline)));

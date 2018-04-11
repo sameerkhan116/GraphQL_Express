@@ -21,32 +21,24 @@ import jwt from 'jsonwebtoken';
 import {createServer} from 'http';
 import {execute, subscribe} from 'graphql';
 import {SubscriptionServer} from 'subscriptions-transport-ws';
+import DataLoader from 'dataloader';
 
 /*
   Typedefs defined in the schema which is required for makeexecutable schema
   Resolvers to resolve the schema as defined in ./schema. basically these are
   functions that give the output of the query we are running as defined in schema.
 */
-import typeDefs from './schema';
-import resolvers from './resolvers';
-
+import typeDefs from './gql/schema';
+import resolvers from './gql/resolvers';
+import {refreshTokens} from './logic/auth';
+import batchSuggestion from './logic/suggestionLoader';
+import addUser from './logic/addUser';
 import models from './models'; // the sequelize models that we have defined
 
 const app = express();
 const PORT = 4000;
 const schema = makeExecutableSchema({typeDefs, resolvers}); // pass the required typeDefs and resolvers to make executable schema
 const SECRET = 'sameerkhan';
-
-const addUser = async(req) => {
-  const token = req.headers.authorization;
-  try {
-    const {user} = await jwt.verify(token, SECRET);
-    req.user = user;
-  } catch (err) {
-    console.log('Please check authorization headers');
-  }
-  req.next();
-}
 
 app.use(addUser);
 // to log HTTP requests
@@ -59,7 +51,8 @@ app.use('/graphql', bodyParser.json(), graphqlExpress(req => ({
   context: {
     models,
     SECRET,
-    user: req.user
+    user: req.user,
+    suggestionLoader: new DataLoader(keys => batchSuggestion(keys, models))
   }
 })));
 // set up the graphiql endpoint for running graphiql

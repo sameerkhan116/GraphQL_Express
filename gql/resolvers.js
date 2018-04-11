@@ -15,7 +15,9 @@ import { createAsyncIterator } from 'iterall';
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
 import {PubSub} from 'graphql-subscriptions';
-import {requiresAuth, requiresAdmin} from './permissions';
+
+import {requiresAuth, requiresAdmin} from '../logic/permissions';
+import {tryLogin, refreshTokens} from '../logic/auth';
 
 export const pubsub = new PubSub();
 
@@ -37,12 +39,8 @@ export default {
   },
 
   Board : {
-    suggestions: ({id}, args, {models}, info) => 
-      models.Suggestion.findAll({
-        where: {
-          boardId: id
-        }
-      })
+    suggestions: ({id}, args, {suggestionLoader}, info) => 
+      suggestionLoader.load(id)
   },
 
   Suggestion : {
@@ -102,30 +100,11 @@ export default {
       return models.User.create(user);
     },
 
-    login: async(obj, {email, password}, {models, SECRET}, info) => {
-      const user = await models.User.findOne({
-        where: {
-          email
-        }})
+    login: async(obj, {email, password}, {models, SECRET}, info) => 
+      tryLogin(email, password, models, SECRET),
 
-      if (!user) 
-        throw new Error('No user with that email.');
-
-      const valid = await bcrypt.compare(password, user.password);
-
-      if (!valid) 
-        throw new Error('Incorrect password');
-
-      const token = jwt.sign({
-        user: _.pick(user, ['id', 'username', 'isAdmin'])
-      }, 
-        SECRET, 
-      {
-        expiresIn: '1y'
-      })
-
-      return token;
-    },
+    refreshTokens: (obj, { token, refreshToken }, { models, SECRET }, info) => 
+      refreshTokens(token, refreshToken, models, SECRET),
 
     updateUser: (obj, {username, newUsername}, {models}, info) => 
       models.User.update({

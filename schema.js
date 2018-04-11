@@ -47,7 +47,7 @@ export default `
     deleteUser(username: String!): Int!
     createBoard(owner: ID!, name: String!): Board!
     createSuggestion(creatorId: ID!, text: String!, boardId: Int!): Suggestion!
-    register(username: String!, email: String!, password: String!): User!
+    register(username: String!, email: String!, password: String!, isAdmin: Boolean!): User!
     login(email: String!, password: String!): String!
   }
 

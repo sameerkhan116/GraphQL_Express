@@ -43,7 +43,7 @@ const addUser = async(req) => {
     const {user} = await jwt.verify(token, SECRET);
     req.user = user;
   } catch (err) {
-    console.log(err);
+    console.log('Please check authorization headers');
   }
   req.next();
 }

@@ -15,20 +15,21 @@ import { createAsyncIterator } from 'iterall';
 import jwt from 'jsonwebtoken';
 import _ from 'lodash';
 import {PubSub} from 'graphql-subscriptions';
+import {requiresAuth, requiresAdmin} from './permissions';
 
 export const pubsub = new PubSub();
 
 export default {
   User : {
-    boards: ({id}, args, {models}, info) => models
-      .Board.findAll({
+    boards: ({id}, args, {models}, info) => 
+      models.Board.findAll({
         where: {
           owner: id
         }
       }),
 
-    suggestions: ({id}, args, {models}, info) => models
-      .Suggestion.findAll({
+    suggestions: ({id}, args, {models}, info) => 
+      models.Suggestion.findAll({
         where: {
           creatorId: id
         }
@@ -36,8 +37,8 @@ export default {
   },
 
   Board : {
-    suggestions: ({id}, args, {models}, info) => models
-      .Suggestion.findAll({
+    suggestions: ({id}, args, {models}, info) => 
+      models.Suggestion.findAll({
         where: {
           boardId: id
         }
@@ -116,8 +117,9 @@ export default {
         throw new Error('Incorrect password');
 
       const token = jwt.sign({
-        user: _.pick(user, ['id', 'username'])
-      }, SECRET, 
+        user: _.pick(user, ['id', 'username', 'isAdmin'])
+      }, 
+        SECRET, 
       {
         expiresIn: '1y'
       })
@@ -136,8 +138,8 @@ export default {
     deleteUser: (obj, args, {models}, info) => 
       models.User.destroy({where: args}),
 
-    createBoard: (obj, args, {models}, info) => 
-      models.Board.create(args),
+    createBoard: requiresAdmin.createResolver((obj, args, {models}, info) => 
+      models.Board.create(args)),
 
     createSuggestion: (obj, args, {models}, info) => 
       models.Suggestion.create(args)

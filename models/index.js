@@ -11,8 +11,9 @@ const sequelize = new Sequelize('test_graphql_db', 'root', 'abc123', {
 const db = {
   User: sequelize.import ('./user'),
   Board: sequelize.import ('./board'),
-  Suggestion: sequelize.import ('./suggestion')
-
+  Suggestion: sequelize.import ('./suggestion'),
+  GitHubAuth: sequelize.import ('./githubAuth'),
+  LocalAuth: sequelize.import ('./localAuth')
 }
 
 // go over each key in the db as defined above and for each model defined, if it

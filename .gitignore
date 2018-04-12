@@ -2,3 +2,4 @@ node_modules
 yarn-error.log
 .babelrc
 yarn.lock
+variables.env

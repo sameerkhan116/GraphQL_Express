@@ -17,6 +17,7 @@
     to endpoint.
   Dataloader is required for caching data load requests.
   passport required for github login
+  dotenv for setting up environment variables
 */
 import express from 'express';
 import bodyParser from 'body-parser';
@@ -29,6 +30,7 @@ import {execute, subscribe} from 'graphql';
 import {SubscriptionServer} from 'subscriptions-transport-ws';
 import DataLoader from 'dataloader';
 import passport from 'passport';
+import dotenv from 'dotenv';
 
 /*
   Typedefs defined in the schema which is required for makeexecutable schema
@@ -45,16 +47,18 @@ import gitstrat from './logic/gitstrat';
 import models from './models'; // the sequelize models that we have defined
 
 /*
+  Using dotenv to set up environment variables by specifying the environment variables path
   We require the express function for running the server, the PORT on which the server will listen
   and a secret key which will be used for authentication, which are all defined here.
     We also need the schema setup which is created using makeexecutableschema that takes options
     typeDefs (the schema we defined with different types) and the resolvers on how to resolve the
     type and mutations etc in the schema
 */
+dotenv.config({path: 'variables.env'});
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT;
 const schema = makeExecutableSchema({typeDefs, resolvers}); // pass the required typeDefs and resolvers to make executable schema
-export const SECRET = 'sameerkhan';
+export const SECRET = process.env.SECRET;
 
 app.use(addUser); // addUser middleware that we defined which check proper authentication
 app.use(logger('dev')); // to log HTTP requests
@@ -100,7 +104,7 @@ const server = createServer(app); // creating an HTTP server
 */
 models
   .sequelize
-  .sync({})
+  .sync({force: true})
   .then(() => server.listen(PORT, () => {
     new SubscriptionServer({
       execute,

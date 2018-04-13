@@ -95,7 +95,7 @@ export default `
   }
 
   type Subscription {
-    userAdded: User!
+    userAdded: User
     boardAdded: Board!
     suggestionAdded: Suggestion!
   }

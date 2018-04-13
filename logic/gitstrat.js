@@ -13,7 +13,7 @@ require('dotenv').config({path: 'variables.env'});
 export default new GitHubStrategy({
   clientID: process.env.CLIENT_ID,
   clientSecret: process.env.CLIENT_SECRET,
-  callbackURL: "https://c3c9d2ca.ngrok.io/auth/github/callback"
+  callbackURL: `${process.env.URL}/auth/github/callback`
 }, async(accessToken, refreshToken, profile, cb) => {
   const {id, username, displayName} = profile; // get the id, username and displayname from the profile that we get when we run the github strategy
   const githubUsers = await models // checking if user with that id already exists in db

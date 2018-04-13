@@ -58,6 +58,7 @@ dotenv.config({path: 'variables.env'});
 const app = express();
 const PORT = process.env.PORT;
 const schema = makeExecutableSchema({typeDefs, resolvers}); // pass the required typeDefs and resolvers to make executable schema
+
 export const SECRET = process.env.SECRET;
 
 app.use(addUser); // addUser middleware that we defined which check proper authentication
@@ -81,7 +82,7 @@ app.use('/graphql', bodyParser.json(), graphqlExpress(req => ({
   }
 })));
 // set up the graphiql endpoint for running graphiql
-app.get('/graphiql', graphiqlExpress({endpointURL: '/graphql'})); // if you want GraphiQL enabled
+app.get('/graphiql', graphiqlExpress({endpointURL: '/graphql', subscriptionsEndpoint: `ws://localhost:${PORT}/subscriptions`})); // if you want GraphiQL enabled
 
 /*
   Setting up github authentication. First setup passport tp use gitstrat that we defined in another file.
@@ -104,13 +105,12 @@ const server = createServer(app); // creating an HTTP server
 */
 models
   .sequelize
-  .sync({force: true})
+  .sync({})
   .then(() => server.listen(PORT, () => {
+    console.log(`Running on http://localhost:${PORT}`.yellow.underline)
     new SubscriptionServer({
       execute,
       subscribe,
       schema
     }, {server, path: '/subscriptions'})
-  }, (err) => err
-    ? console.log(err)
-    : console.log(`Running on http://localhost:${PORT}`.yellow.underline)));
+  }));

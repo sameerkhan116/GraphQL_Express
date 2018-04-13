@@ -21,6 +21,7 @@ import {tryLogin, refreshTokens} from '../logic/auth';
 
 // create a new instance of pubsub
 export const pubsub = new PubSub();
+const USER_ADDED = 'user_added';
 
 export default {
   User : {
@@ -130,7 +131,7 @@ export default {
       const userAdded = await(models.User.create(user));
       pubsub.publish(USER_ADDED, {
         userAdded
-      })
+      });
       return userAdded;
     },
 
@@ -139,9 +140,16 @@ export default {
       using bcrypt and pass to models.User.create to create a new user.
     */
     register: async(obj, args, {models}, info) => {
-      const user = args;
-      user.password = await(bcrypt.hash(user.password, 12));
-      return models.User.create(user);
+      const user = _.pick(args, ['username', 'isAdmin']);
+      const localAuth = _.pick(args, ['email', 'password']);
+      const passwordPromise = bcrypt.hash(localAuth.password, 12);
+      const createUserPromise = models.User.create(user);
+      const [password, createdUser] = await Promise.all([passwordPromise, createUserPromise]);
+      localAuth.password = password;
+      return models.LocalAuth.create({
+        ...localAuth,
+        user_id: createdUser.id
+      })
     },
 
     /* 
